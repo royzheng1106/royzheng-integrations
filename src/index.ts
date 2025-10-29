@@ -11,33 +11,10 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // Middleware for API key
 function requireApiKey(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if(!CONFIG.IS_VERCEL) {
-    next()
-  }
   const apiKey = req.headers['X-Telegram-Bot-Api-Secret-Token'];
-  if (apiKey !== CONFIG.API_KEY) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  if (apiKey !== CONFIG.TELEGRAM_SECRET) return res.status(401).json({ ok: false, error: 'Unauthorized' });
   next();
 }
-
-import https from "https";
-
-https.get("https://api.telegram.org", (res) => {
-  console.log("✅ Telegram API reachable, status:", res.statusCode);
-}).on("error", (err) => {
-  console.error("❌ Telegram API unreachable:", err.message);
-});
-
-https.get("https://www.google.com", (res) => {
-  console.log("✅ Google API reachable, status:", res.statusCode);
-}).on("error", (err) => {
-  console.error("❌ Google API unreachable:", err.message);
-});
-
-https.get("https://royzheng-integrations.vercel.app", (res) => {
-  console.log("✅ Integrations API reachable, status:", res.statusCode);
-}).on("error", (err) => {
-  console.error("❌ Integrations API unreachable:", err.message);
-});
 
 app.get("/", (_req, res) => res.send("💻 royzheng-integrations running"));
 app.post("/", (_req, res) => res.send("💻 royzheng-integrations running"));

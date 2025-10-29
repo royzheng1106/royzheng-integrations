@@ -1,6 +1,6 @@
 import TelegramBot from "node-telegram-bot-api";
 import { CONFIG } from "../../utils/config.js";
-import { Response, OutgoingRecipient } from "../../models/Response.js";
+import { Response, ResponseRecipient } from "../../models/Response.js";
 import { transformMarkdown } from '../../utils/transformMarkdown.js';
 import { Readable } from "stream";
 /**
@@ -101,7 +101,7 @@ export class TelegramBotFactory {
  */
 export async function sendTelegramResponse(
   response: Response,
-  specificRecipient?: OutgoingRecipient
+  specificRecipient?: ResponseRecipient
 ) {
   // Get singleton bot instance
   const bot = await TelegramBotFactory.getInstance();
@@ -109,7 +109,7 @@ export async function sendTelegramResponse(
   const recipients = specificRecipient ? [specificRecipient] : response.recipients;
 
   for (const recipient of recipients) {
-    const chatId = recipient.chatId;
+    const chatId = recipient.chat_id;
 
     if (!chatId) {
       console.warn("⚠️ Missing chatId for Telegram response:", recipient);
@@ -121,8 +121,12 @@ export async function sendTelegramResponse(
         switch (msg.type) {
           // -------------------- Text message --------------------
           case "text": {
-            const placeholderMessageId = Number(msg.placeholderMessageId);
-            const transformedContent = transformMarkdown(msg.content);
+            const placeholderMessageId = Number(msg.placeholder_message_id);
+            if (msg.text === undefined) {
+              console.error('Message text is missing.');
+              break;
+            }
+            const transformedContent = transformMarkdown(msg.text);
 
             // Check for editMessage flag in metadata
             const editMessage = response.metadata?.editMessage === true;

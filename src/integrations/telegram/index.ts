@@ -5,7 +5,7 @@ import { sendTelegramResponse, TelegramBotFactory } from "../telegram/client.js"
 import { CONFIG } from "../../utils/config.js";
 
 const router = Router();
-const EVENTS_API_URL = "https://royzheng-agents.vercel.app/api/events";
+const EVENTS_API_URL = "https://royzheng-agents-lb.hf.space/api/events";
 
 function isWhitelisted(userId?: number, chatId?: number): boolean {
   const ids = [userId, chatId].filter(Boolean).map(String);
@@ -30,9 +30,9 @@ router.post("/", async (req: Request, res: ExResponse) => {
 
       await sendTelegramResponse({
         recipients: [
-          { channel: "telegram", chatId: chat.id, userId: sender.id },
+          { channel: "telegram", chat_id: chat.id, user_id: sender.id },
         ],
-        messages: [{ type: "text", content: "❌ You are not allowed to use this bot." }],
+        messages: [{ type: "text", text: "❌ You are not allowed to use this bot." }],
       });
 
       return res.status(200).send("Forbidden: sender not whitelisted");
@@ -51,9 +51,9 @@ router.post("/", async (req: Request, res: ExResponse) => {
 
     event.metadata = {
       ...event.metadata,
-      placeholderMessageId,
+      placeholder_message_id: placeholderMessageId,
     };
-    
+
     console.log("✅ Telegram Event (whitelisted):", event);
 
     // 3️⃣ Forward to remote API
@@ -61,21 +61,27 @@ router.post("/", async (req: Request, res: ExResponse) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": CONFIG.AGENTS_API_KEY!,
+        "Authorization": "Bearer " + CONFIG.AGENTS_API_KEY!,
       },
       body: JSON.stringify(event),
     });
 
     if (!response.ok) {
       console.error(`❌ Failed to send event to API: ${response.statusText}`);
-      return res.status(500).send("Failed to forward event");
+      await sendTelegramResponse({
+        recipients: [
+          { channel: "telegram", chat_id: chat.id, user_id: sender.id },
+        ],
+        messages: [{ type: "text", text: "❌ Error processing your query.", placeholder_message_id: placeholderMessageId}],
+      });
+      return res.status(200).send("Failed to forward event");
     }
 
     console.log(`✅ Event forwarded to ${EVENTS_API_URL}`);
     res.status(200).send("OK");
   } catch (err) {
     console.error("❌ Telegram handler error:", err);
-    res.status(500).send("Internal Server Error");
+    res.status(200).send("Internal Server Error");
   }
 });
 

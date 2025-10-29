@@ -38,7 +38,7 @@ function requireEnv(key: string, optional = false): string | undefined {
  */
 export const CONFIG = {
   APP_ENV,
-  IS_VERCEL: process.env.VERCEL === "1" || requireEnv("APP_ENV") === "production",
+  IS_VERCEL: process.env.VERCEL === "1",
   PORT: process.env.PORT || 3000,
   TELEGRAM_BOT_TOKEN: requireEnv("TELEGRAM_BOT_TOKEN"),
   AGENTS_API_KEY: requireEnv("AGENTS_API_KEY"),

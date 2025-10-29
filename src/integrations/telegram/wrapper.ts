@@ -2,6 +2,7 @@ import { Event } from "../../models/Event.js";
 import { USER_WHITELIST } from "../../utils/userAccessControl.js";
 import { v4 as uuidv4 } from "uuid";
 import { CONFIG } from "../../utils/config.js";
+import { sendTelegramResponse } from "../telegram/client.js";
 
 // --- Allowed MIME types ---
 const allowedAudioMimeTypes = [
@@ -33,20 +34,6 @@ function getAgentId(sender: { id?: number; chatId?: number }): string | null {
     if (USER_WHITELIST[id]) return USER_WHITELIST[id];
   }
   return null;
-}
-
-/**
- * Send a Telegram message back to the user (for limits or warnings).
- */
-async function sendTelegramMessage(chatId: number, text: string): Promise<void> {
-  const botToken = CONFIG.TELEGRAM_BOT_TOKEN;
-  if (!botToken) throw new Error("Missing TELEGRAM_BOT_TOKEN in environment");
-
-  await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text }),
-  });
 }
 
 /**
@@ -95,12 +82,12 @@ export async function wrapTelegramMessage(raw: any): Promise<Event | null> {
 
   const senderIdentity: Event["sender"] = {
     source: "telegram",
-    isBot: sender.is_bot,
-    messageId: message.message_id,
-    chatId: chat.id,
-    userId: sender.id,
-    ...(sender.first_name ? { firstName: sender.first_name } : {}),
-    ...(sender.last_name ? { lastName: sender.last_name } : {}),
+    is_bot: sender.is_bot,
+    message_id: message.message_id,
+    chat_id: chat.id,
+    user_id: sender.id,
+    ...(sender.first_name ? { first_name: sender.first_name } : {}),
+    ...(sender.last_name ? { last_name: sender.last_name } : {}),
     ...(sender.username ? { username: sender.username } : {}),
   };
 
@@ -132,18 +119,22 @@ export async function wrapTelegramMessage(raw: any): Promise<Event | null> {
 
       // 🚫 Check size before download
       if (size > MAX_IMAGE_SIZE) {
-        await sendTelegramMessage(
-          chat.id,
-          `⚠️ The image is too large (${(size / 1024 / 1024).toFixed(
-            2
-          )} MB). Please send an image smaller than ${(MAX_IMAGE_SIZE / 1024 / 1024).toFixed(1)} MB.`
-        );
+        await sendTelegramResponse({
+          recipients: [
+            { channel: "telegram", chat_id: chat.id, user_id: sender.id },
+          ],
+          messages: [{
+            type: "text", text: `⚠️ The image is too large (${(size / 1024 / 1024).toFixed(
+              2
+            )} MB). Please send an image smaller than ${(MAX_IMAGE_SIZE / 1024 / 1024).toFixed(1)} MB.`
+          }],
+        });
         return null;
       }
 
       messages.push({
-        type: "image_url",
-        imageUrl: { url, format: "image/jpeg" },
+        type: "image",
+        image: { url, format: "image/jpeg" },
       });
 
       metadata.imageUrl = url;
@@ -167,17 +158,23 @@ export async function wrapTelegramMessage(raw: any): Promise<Event | null> {
       // 🚫 Check size before download
       if (size > MAX_AUDIO_SIZE) {
         if (isVoice) {
-          await sendTelegramMessage(
-            chat.id,
-            `🎤 Your voice message is too long. Please try speaking shorter or sending a smaller voice note.`
-          );
+          await sendTelegramResponse({
+            recipients: [
+              { channel: "telegram", chat_id: chat.id, user_id: sender.id },
+            ],
+            messages: [{ type: "text", text: `🎤 Your voice message is too long. Please try speaking shorter or sending a smaller voice note.` }],
+          });
         } else {
-          await sendTelegramMessage(
-            chat.id,
-            `⚠️ The audio file is too large (${(size / 1024 / 1024).toFixed(
-              2
-            )} MB). Please send an audio file smaller than ${(MAX_AUDIO_SIZE / 1024 / 1024).toFixed(1)} MB.`
-          );
+          await sendTelegramResponse({
+            recipients: [
+              { channel: "telegram", chat_id: chat.id, user_id: sender.id },
+            ],
+            messages: [{
+              type: "text", text: `⚠️ The audio file is too large (${(size / 1024 / 1024).toFixed(
+                2
+              )} MB). Please send an audio file smaller than ${(MAX_AUDIO_SIZE / 1024 / 1024).toFixed(1)} MB.`
+            }],
+          });
         }
         return null;
       }
@@ -185,12 +182,12 @@ export async function wrapTelegramMessage(raw: any): Promise<Event | null> {
       const { base64 } = await fetchTelegramFileBase64(fileId);
 
       messages.push({
-        type: "input_audio",
-        inputAudio: { data: base64, format },
+        type: "audio",
+        audio: { data: base64, format },
       });
 
-      metadata.audioUrl = url;
-      metadata.audioSize = size;
+      metadata.audio_url = url;
+      metadata.audio_size = size;
     }
   }
 
@@ -213,20 +210,24 @@ export async function wrapTelegramMessage(raw: any): Promise<Event | null> {
       const { url, size } = await getTelegramFileUrl(fileId);
 
       if (size > MAX_AUDIO_SIZE) {
-        await sendTelegramMessage(
-          chat.id,
-          `⚠️ The audio file is too large (${(size / 1024 / 1024).toFixed(
-            2
-          )} MB). Please send an audio file smaller than ${(MAX_AUDIO_SIZE / 1024 / 1024).toFixed(1)} MB.`
-        );
+        await sendTelegramResponse({
+          recipients: [
+            { channel: "telegram", chat_id: chat.id, user_id: sender.id },
+          ],
+          messages: [{
+            type: "text", text: `⚠️ The audio file is too large (${(size / 1024 / 1024).toFixed(
+              2
+            )} MB). Please send an audio file smaller than ${(MAX_AUDIO_SIZE / 1024 / 1024).toFixed(1)} MB.`
+          }],
+        });
         return null;
       }
 
       const { base64 } = await fetchTelegramFileBase64(fileId);
 
       messages.push({
-        type: "input_audio",
-        inputAudio: { data: base64, format: mime_type },
+        type: "audio",
+        audio: { data: base64, format: mime_type },
       });
 
       metadata.audioUrl = url;
@@ -237,18 +238,22 @@ export async function wrapTelegramMessage(raw: any): Promise<Event | null> {
       const { url, size } = await getTelegramFileUrl(fileId);
 
       if (size > MAX_IMAGE_SIZE) {
-        await sendTelegramMessage(
-          chat.id,
-          `⚠️ The image is too large (${(size / 1024 / 1024).toFixed(
-            2
-          )} MB). Please send an image smaller than ${(MAX_IMAGE_SIZE / 1024 / 1024).toFixed(1)} MB.`
-        );
+        await sendTelegramResponse({
+          recipients: [
+            { channel: "telegram", chat_id: chat.id, user_id: sender.id },
+          ],
+          messages: [{
+            type: "text", text: `⚠️ The image is too large (${(size / 1024 / 1024).toFixed(
+              2
+            )} MB). Please send an image smaller than ${(MAX_IMAGE_SIZE / 1024 / 1024).toFixed(1)} MB.`
+          }],
+        });
         return null;
       }
 
       messages.push({
-        type: "image_url",
-        imageUrl: { url, format: mime_type },
+        type: "image",
+        image: { url, format: mime_type },
       });
 
       metadata.imageUrl = url;
@@ -256,10 +261,14 @@ export async function wrapTelegramMessage(raw: any): Promise<Event | null> {
     }
     // Unsupported
     else {
-      await sendTelegramMessage(
-        chat.id,
-        `❌ File format not supported: ${mime_type}. Please send an accepted audio or image file.`
-      );
+      await sendTelegramResponse({
+        recipients: [
+          { channel: "telegram", chat_id: chat.id, user_id: sender.id },
+        ],
+        messages: [{
+          type: "text", text: `❌ File format not supported: ${mime_type}. Please send an accepted audio or image file.`
+        }],
+      });
       return null;
     }
 
@@ -270,23 +279,27 @@ export async function wrapTelegramMessage(raw: any): Promise<Event | null> {
   }
   // --- FALLBACK ---
   else {
-      await sendTelegramMessage(
-        chat.id,
-        `❌ Action not supported. Please send text, an image, a supported audio file or location.`
-      );
+    await sendTelegramResponse({
+      recipients: [
+        { channel: "telegram", chat_id: chat.id, user_id: sender.id },
+      ],
+      messages: [{
+        type: "text", text: `❌ Action not supported. Please send text, an image, a supported audio file or location.`
+      }],
+    });
   }
 
   return {
     id: message.message_id?.toString() ?? uuidv4(),
-    agentId,
+    agent_id: agentId,
     timestamp,
     messages,
     sender: senderIdentity,
     recipients: [
       {
         channel: "telegram",
-        chatId: chat.id,
-        userId: sender.id,
+        chat_id: chat.id,
+        user_id: sender.id,
       },
     ],
     metadata: Object.keys(metadata).length > 0 ? metadata : {},

@@ -81,7 +81,9 @@ export class TelegramBotFactory {
 
         // ✅ Register your server endpoint as the webhook URL
         const webhookUrl = `${CONFIG.BASE_URL}/api/telegram`;
-        await this.instance.setWebHook(webhookUrl);
+        await this.instance.setWebHook(webhookUrl, {
+            secret_token: CONFIG.TELEGRAM_SECRET
+        });
         console.log("🚀 Webhook successfully set at:", webhookUrl);
 
         return this.instance!;

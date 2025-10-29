@@ -6,7 +6,7 @@ import { CONFIG } from "./utils/config.js";
 const app = express();
 
 // Increase request size limit to handle base64 audio
-app.use(express.json({ limit: "10b" }));
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // Middleware for API key
@@ -14,7 +14,7 @@ function requireApiKey(req: express.Request, res: express.Response, next: expres
   if(!CONFIG.IS_VERCEL) {
     next()
   }
-  const apiKey = req.headers['x-api-key'];
+  const apiKey = req.headers['X-Telegram-Bot-Api-Secret-Token'];
   if (apiKey !== CONFIG.API_KEY) return res.status(401).json({ ok: false, error: 'Unauthorized' });
   next();
 }

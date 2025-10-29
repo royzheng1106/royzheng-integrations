@@ -20,15 +20,23 @@ function requireApiKey(req: express.Request, res: express.Response, next: expres
 }
 
 import https from "https";
-import dns from "dns";
-dns.setServers(["8.8.8.8", "1.1.1.1"]);
-dns.setDefaultResultOrder("ipv4first");
-
 
 https.get("https://api.telegram.org", (res) => {
   console.log("✅ Telegram API reachable, status:", res.statusCode);
 }).on("error", (err) => {
   console.error("❌ Telegram API unreachable:", err.message);
+});
+
+https.get("https://www.google.com", (res) => {
+  console.log("✅ Google API reachable, status:", res.statusCode);
+}).on("error", (err) => {
+  console.error("❌ Google API unreachable:", err.message);
+});
+
+https.get("https://royzheng-integrations.vercel.app", (res) => {
+  console.log("✅ Integrations API reachable, status:", res.statusCode);
+}).on("error", (err) => {
+  console.error("❌ Integrations API unreachable:", err.message);
 });
 
 app.get("/", (_req, res) => res.send("💻 royzheng-integrations running"));

@@ -11,6 +11,27 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // Middleware for API key
 function requireApiKey(req: express.Request, res: express.Response, next: express.NextFunction) {
+  let apiKey = Array.isArray(req.headers['x-api-key'])
+    ? req.headers['x-api-key'][0]
+    : req.headers['x-api-key'];
+
+  // If not present, check Authorization header
+  if (!apiKey) {
+    let authHeader = Array.isArray(req.headers['authorization'])
+      ? req.headers['authorization'][0]
+      : req.headers['authorization'];
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      apiKey = authHeader.substring(7); // strip 'Bearer '
+    }
+  }
+
+  if (apiKey !== CONFIG.API_KEY) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized: invalid API key' });
+  }
+}
+
+function requireTelegramSecret(req: express.Request, res: express.Response, next: express.NextFunction) {
   const apiKey = req.headers['X-Telegram-Bot-Api-Secret-Token'];
   if (apiKey !== CONFIG.TELEGRAM_SECRET) return res.status(401).json({ ok: false, error: 'Unauthorized' });
   next();
@@ -20,7 +41,7 @@ app.get("/", (_req, res) => res.send("💻 royzheng-integrations running"));
 app.post("/", (_req, res) => res.send("💻 royzheng-integrations running"));
 
 // Existing Telegram routes
-app.use("/api/telegram", telegramRouter);
+app.use("/api/telegram", requireTelegramSecret, telegramRouter);
 
 app.use("/api/send-response", requireApiKey, sendResponseRouter);
 

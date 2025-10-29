@@ -20,6 +20,10 @@ function requireApiKey(req: express.Request, res: express.Response, next: expres
 }
 
 import https from "https";
+import dns from "dns";
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+dns.setDefaultResultOrder("ipv4first");
+
 
 https.get("https://api.telegram.org", (res) => {
   console.log("✅ Telegram API reachable, status:", res.statusCode);

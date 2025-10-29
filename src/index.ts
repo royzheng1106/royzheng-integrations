@@ -19,6 +19,14 @@ function requireApiKey(req: express.Request, res: express.Response, next: expres
   next();
 }
 
+import https from "https";
+
+https.get("https://api.telegram.org", (res) => {
+  console.log("✅ Telegram API reachable, status:", res.statusCode);
+}).on("error", (err) => {
+  console.error("❌ Telegram API unreachable:", err.message);
+});
+
 app.get("/", (_req, res) => res.send("💻 royzheng-integrations running"));
 app.post("/", (_req, res) => res.send("💻 royzheng-integrations running"));
 

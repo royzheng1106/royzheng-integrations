@@ -113,15 +113,16 @@ export async function sendTelegramResponse(
             const transformedContent = transformMarkdown(msg.text);
 
             // Check for editMessage flag in metadata
-            const editMessage = response.metadata?.editMessage === true;
+            const editMessage = response.metadata?.edit_message === true;
 
             if (editMessage && placeholderMessageId) {
               try {
-                await bot.editMessageText(transformedContent, {
+                const res = await bot.editMessageText(transformedContent, {
                   chat_id: chatId,
                   message_id: placeholderMessageId,
                   parse_mode: "MarkdownV2",
                 });
+                console.log(`✅ Telegram editMessageText success for chatId ${chatId}:`, res);
               } catch (err: any) {
                 console.error(`❌ Telegram editMessageText error for chatId ${chatId}:`, err);
                 // fallback: send new message if edit fails
@@ -130,9 +131,10 @@ export async function sendTelegramResponse(
                 });
               }
             } else {
-              await bot.sendMessage(chatId, transformedContent, {
+              const res = await bot.sendMessage(chatId, transformedContent, {
                 parse_mode: "MarkdownV2",
               });
+              console.log(`📨 Telegram sendMessage response for chatId ${chatId}:`, res);
             }
 
             // Optionally delete placeholder if we sent a new message

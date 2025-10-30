@@ -67,33 +67,15 @@ import { Readable } from "stream";
 
 export class TelegramBotFactory {
   private static instance: TelegramBot | null = null;
-  private static initializing: Promise<TelegramBot> | null = null;
 
   public static async getInstance(): Promise<TelegramBot> {
-    if (this.instance) return this.instance;
-
-    if (!this.initializing) {
-      this.initializing = (async () => {
-        console.log("🌐 Initializing Telegram bot (webhook mode)...");
-
-        // ✅ Create bot in webhook mode WITHOUT binding a port
-        this.instance = new TelegramBot(CONFIG.TELEGRAM_BOT_TOKEN!, { webHook: true });
-
-        // ✅ Register your server endpoint as the webhook URL
-        const webhookUrl = `${CONFIG.BASE_URL}/api/telegram`;
-        await this.instance.setWebHook(webhookUrl, {
-            secret_token: CONFIG.TELEGRAM_SECRET
-        });
-        console.log("🚀 Webhook successfully set at:", webhookUrl);
-
-        return this.instance!;
-      })();
+    if (!this.instance) {
+      console.log("🌐 Using existing Telegram webhook setup...");
+      this.instance = new TelegramBot(CONFIG.TELEGRAM_BOT_TOKEN!, { webHook: true });
     }
-
-    return this.initializing;
+    return this.instance;
   }
 }
-
 
 /**
  * sendTelegramResponse

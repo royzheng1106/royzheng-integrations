@@ -21,10 +21,10 @@ function requireApiKey(req: express.Request, res: express.Response, next: expres
   if (authHeader && authHeader.startsWith('Bearer ')) {
     apiKey = authHeader.substring(7); // strip 'Bearer '
   }
-
   if (apiKey !== CONFIG.API_KEY) {
     return res.status(401).json({ ok: false, error: 'Unauthorized: invalid API key' });
   }
+  next();
 }
 
 function requireTelegramSecret(req: express.Request, res: express.Response, next: express.NextFunction) {

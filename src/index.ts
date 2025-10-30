@@ -28,6 +28,8 @@ function requireApiKey(req: express.Request, res: express.Response, next: expres
 
 function requireTelegramSecret(req: express.Request, res: express.Response, next: express.NextFunction) {
   const apiKey = req.headers['x-telegram-bot-api-secret-token'];
+  console.log(apiKey);
+  console.log(CONFIG.TELEGRAM_SECRET);
   if (apiKey !== CONFIG.TELEGRAM_SECRET) return res.status(403).send("Forbidden");
   next();
 }

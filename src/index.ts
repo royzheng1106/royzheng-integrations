@@ -35,6 +35,7 @@ function requireTelegramSecret(req: express.Request, res: express.Response, next
 }
 
 app.get("/", (_req, res) => res.send("💻 royzheng-integrations running"));
+app.get("/_health", (_req, res) => res.send("💻 royzheng-integrations running"));
 app.post("/", (_req, res) => res.send("💻 royzheng-integrations running"));
 
 app.use("/api/telegram", requireTelegramSecret, telegramRouter);

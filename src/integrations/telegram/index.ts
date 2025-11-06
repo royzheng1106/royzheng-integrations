@@ -5,7 +5,7 @@ import { sendTelegramResponse, TelegramBotFactory } from "../telegram/client.js"
 import { CONFIG } from "../../utils/config.js";
 
 const router = Router();
-const EVENTS_API_URL = "https://royzheng-agents-lb.hf.space/api/events";
+const EVENTS_API_URL = "https://royzheng-agents.hf.space/api/events";
 
 function isWhitelisted(userId?: number, chatId?: number): boolean {
   const ids = [userId, chatId].filter(Boolean).map(String);

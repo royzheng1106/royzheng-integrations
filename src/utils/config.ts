@@ -42,11 +42,11 @@ export const CONFIG = {
   PORT: process.env.PORT || 3000,
   TELEGRAM_BOT_TOKEN: requireEnv("TELEGRAM_BOT_TOKEN"),
   AGENTS_API_KEY: requireEnv("AGENTS_API_KEY"),
-  TELEGRAM_SECRET: requireEnv("TELEGRAM_SECRET"),
-  API_KEY: requireEnv("API_KEY"),
-  BASE_URL: requireEnv("BASE_URL")
-    ? `https://${process.env.BASE_URL}`
-    : process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : `http://localhost:${process.env.PORT || 3000}`,
+  // TELEGRAM_SECRET: requireEnv("TELEGRAM_SECRET"),
+  // API_KEY: requireEnv("API_KEY"),
+  // BASE_URL: requireEnv("BASE_URL")
+    // ? `https://${process.env.BASE_URL}`
+    // : process.env.VERCEL_URL
+    //     ? `https://${process.env.VERCEL_URL}`
+    //     : `http://localhost:${process.env.PORT || 3000}`,
 };

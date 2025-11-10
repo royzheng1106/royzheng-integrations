@@ -125,16 +125,63 @@ export async function sendTelegramResponse(
                 console.log(`✅ Telegram editMessageText success for chatId ${chatId}:`, res);
               } catch (err: any) {
                 console.error(`❌ Telegram editMessageText error for chatId ${chatId}:`, err);
-                // fallback: send new message if edit fails
-                await bot.sendMessage(chatId, transformedContent, {
-                  parse_mode: "MarkdownV2",
-                });
+
+                if (err.response && err.response.description && err.response.description.includes("400 Bad Request: can't parse entities:")) {
+                  console.warn(`⚠️ Falling back to editMessageText WITHOUT parse_mode for chatId ${chatId}`);
+                  try {
+                    // Fallback EDIT: Try editing WITHOUT parse_mode
+                    const res = await bot.editMessageText(transformedContent, {
+                      chat_id: chatId,
+                      message_id: placeholderMessageId,
+                    });
+                    console.log(`✅ Telegram fallback editMessageText success for chatId ${chatId}:`, res);
+                    return; // Exit if fallback edit succeeds
+                  } catch (fallbackEditErr) {
+                    console.error(`❌ Telegram secondary fallback editMessageText error for chatId ${chatId}:`, fallbackEditErr);
+                    // Continue to the final fallback: send new message
+                  }
+                }
+                try {
+                  const res = await bot.sendMessage(chatId, transformedContent, {
+                    parse_mode: "MarkdownV2",
+                  });
+                  console.log(`📨 Telegram sendMessage (fallback) response for chatId ${chatId}:`, res);
+                } catch (sendMessageErr: any) {
+                  if (sendMessageErr.response && sendMessageErr.response.description && sendMessageErr.response.description.includes("400 Bad Request: can't parse entities:")) {
+                    console.warn(`⚠️ Falling back to sendMessage WITHOUT parse_mode for chatId ${chatId}`);
+                    try {
+                      const res = await bot.sendMessage(chatId, transformedContent);
+                      console.log(`📨 Telegram fallback sendMessage success for chatId ${chatId}:`, res);
+                    } catch (fallbackSendErr) {
+                      console.error(`❌ Telegram secondary fallback sendMessage error for chatId ${chatId}:`, fallbackSendErr);
+                    }
+                  }
+                  console.error(`❌ Telegram fallback sendMessage error for chatId ${chatId}:`, sendMessageErr);
+                }
               }
             } else {
-              const res = await bot.sendMessage(chatId, transformedContent, {
-                parse_mode: "MarkdownV2",
-              });
-              console.log(`📨 Telegram sendMessage response for chatId ${chatId}:`, res);
+              // Sending a new message
+              try {
+                // 1. Attempt to SEND the message with MarkdownV2
+                const res = await bot.sendMessage(chatId, transformedContent, {
+                  parse_mode: "MarkdownV2",
+                });
+                console.log(`📨 Telegram sendMessage response for chatId ${chatId}:`, res);
+              } catch (err: any) {
+                console.error(`❌ Telegram sendMessage error for chatId ${chatId}:`, err);
+
+                // Check for "can't parse entities" error to trigger the fallback send
+                if (err.response && err.response.description && err.response.description.includes("400 Bad Request: can't parse entities:")) {
+                  console.warn(`⚠️ Falling back to sendMessage WITHOUT parse_mode for chatId ${chatId}`);
+                  try {
+                    // Fallback SEND: Try sending WITHOUT parse_mode
+                    const res = await bot.sendMessage(chatId, transformedContent);
+                    console.log(`📨 Telegram fallback sendMessage success for chatId ${chatId}:`, res);
+                  } catch (fallbackSendErr) {
+                    console.error(`❌ Telegram secondary fallback sendMessage error for chatId ${chatId}:`, fallbackSendErr);
+                  }
+                }
+              }
             }
 
             // Optionally delete placeholder if we sent a new message

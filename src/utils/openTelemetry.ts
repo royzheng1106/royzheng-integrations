@@ -14,7 +14,7 @@ import { CONFIG } from './config.js';
 export async function setupOpenTelemetry(): Promise<Tracer> {
   const sdk = configureOpentelemetry({
     dsn: CONFIG.UPTRACE_DSN,
-    serviceName: CONFIG.SPACE_ID,
+    serviceName: CONFIG.VERCEL_PROJECT_NAME,
     serviceVersion: '1.0.0',
   });
 
@@ -30,7 +30,7 @@ export async function setupOpenTelemetry(): Promise<Tracer> {
   });
 
   await sdk.start();
-  console.log(`✅ OpenTelemetry SDK started for ${CONFIG.SPACE_ID}`);
+  console.log(`✅ OpenTelemetry SDK started for ${CONFIG.VERCEL_PROJECT_NAME}`);
 
   // Create and return the tracer
   const tracer = trace.getTracer('integrations-service', '1.0.0');

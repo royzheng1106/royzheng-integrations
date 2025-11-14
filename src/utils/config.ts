@@ -45,7 +45,7 @@ export const CONFIG = {
   TELEGRAM_SECRET: requireEnv("TELEGRAM_SECRET"),
   API_KEY: requireEnv("API_KEY"),
   UPTRACE_DSN: requireEnv("UPTRACE_DSN"),
-  SPACE_ID: requireEnv("SPACE_ID"),
+  VERCEL_PROJECT_NAME: requireEnv("VERCEL_PROJECT_NAME"),
   // BASE_URL: requireEnv("BASE_URL")
     // ? `https://${process.env.BASE_URL}`
     // : process.env.VERCEL_URL

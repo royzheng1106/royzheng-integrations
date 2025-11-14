@@ -2,12 +2,16 @@ import express from "express";
 import telegramRouter from "./integrations/telegram/index.js";
 import sendResponseRouter from "./api/sendResponse.js";
 import { CONFIG } from "./utils/config.js";
+import { setupOpenTelemetry, SpanStatusCode } from './utils/openTelemetry.js';
 
 const app = express();
 
 // Increase request size limit to handle base64 audio
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ limit: "5mb", extended: true }));
+
+const tracer = await setupOpenTelemetry();
+console.log(`Tracer: ${tracer}`);
 
 // Middleware for API key
 function requireApiKey(req: express.Request, res: express.Response, next: express.NextFunction) {
